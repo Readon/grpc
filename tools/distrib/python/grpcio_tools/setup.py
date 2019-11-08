@@ -88,6 +88,7 @@ def check_linker_need_libatomic():
 # reasonable default.
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
+msvcr = cygwinccompiler.get_msvcr()
 if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS = '-std=c++11'
     if 'win32' in sys.platform:
@@ -103,7 +104,8 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         else:
             # We need to statically link the C++ Runtime, only the C runtime is
             # available dynamically
-            EXTRA_ENV_COMPILE_ARGS += ' /MT'
+            if msvcr is not None:
+                EXTRA_ENV_COMPILE_ARGS += ' /MT'
     elif "linux" in sys.platform or "darwin" in sys.platform:
         EXTRA_ENV_COMPILE_ARGS += ' -fno-wrapv -frtti'
 if EXTRA_ENV_LINK_ARGS is None:
@@ -113,12 +115,15 @@ if EXTRA_ENV_LINK_ARGS is None:
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += ' -latomic'
     elif "win32" in sys.platform and sys.version_info < (3, 5):
-        msvcr = cygwinccompiler.get_msvcr()[0]
-        # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
-        # influence on the linkage outcome on MinGW for non-C++ programs.
-        EXTRA_ENV_LINK_ARGS += (
-            ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr} '
-            '-static'.format(msvcr=msvcr))
+        if msvcr is None:
+            EXTRA_ENV_LINK_ARGS += (' -static-libgcc -static-libstdc++')
+        else:
+            msvcr = msvcr[0]
+            # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
+            # influence on the linkage outcome on MinGW for non-C++ programs.
+            EXTRA_ENV_LINK_ARGS += (
+                ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr} '
+                '-static'.format(msvcr=msvcr))
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
