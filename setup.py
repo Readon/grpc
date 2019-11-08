@@ -190,12 +190,16 @@ if EXTRA_ENV_LINK_ARGS is None:
     if check_linker_need_libatomic():
       EXTRA_ENV_LINK_ARGS += ' -latomic'
   elif "win32" in sys.platform and sys.version_info < (3, 5):
-    msvcr = cygwinccompiler.get_msvcr()[0]
-    # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
-    # influence on the linkage outcome on MinGW for non-C++ programs.
-    EXTRA_ENV_LINK_ARGS += (
-        ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
-        ' -static'.format(msvcr=msvcr))
+    msvcr = cygwinccompiler.get_msvcr()
+    if msvcr is None:
+        EXTRA_ENV_LINK_ARGS += (' -static-libgcc -static-libstdc++')
+    else:
+        msvcr = msvcr[0]
+        # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
+        # influence on the linkage outcome on MinGW for non-C++ programs.
+        EXTRA_ENV_LINK_ARGS += (
+            ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
+            ' -static'.format(msvcr=msvcr))
   if "linux" in sys.platform:
     EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy -static-libgcc'
 
