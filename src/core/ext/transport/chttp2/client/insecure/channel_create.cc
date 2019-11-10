@@ -56,7 +56,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args) {
     return nullptr;
   }
   // Add channel arg containing the server URI.
-  UniquePtr<char> canonical_target =
+  grpc_core::UniquePtr<char> canonical_target =
       ResolverRegistry::AddDefaultPrefixIfNeeded(target);
   grpc_arg arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
@@ -79,7 +79,7 @@ grpc_core::Chttp2InsecureClientChannelFactory* g_factory;
 gpr_once g_factory_once = GPR_ONCE_INIT;
 
 void FactoryInit() {
-  g_factory = grpc_core::New<grpc_core::Chttp2InsecureClientChannelFactory>();
+  g_factory = new grpc_core::Chttp2InsecureClientChannelFactory();
 }
 
 }  // namespace
