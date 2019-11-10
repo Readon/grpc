@@ -161,6 +161,7 @@ def check_linker_need_libatomic():
 # reasonable default.
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
+msvcr = cygwinccompiler.get_msvcr()
 if EXTRA_ENV_COMPILE_ARGS is None:
   EXTRA_ENV_COMPILE_ARGS = ' -std=c++11'
   if 'win32' in sys.platform:
@@ -177,7 +178,8 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     else:
       # We need to statically link the C++ Runtime, only the C runtime is
       # available dynamically
-      EXTRA_ENV_COMPILE_ARGS += ' /MT'
+      if msvcr is not None:
+        EXTRA_ENV_COMPILE_ARGS += ' /MT'
   elif "linux" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
@@ -190,7 +192,6 @@ if EXTRA_ENV_LINK_ARGS is None:
     if check_linker_need_libatomic():
       EXTRA_ENV_LINK_ARGS += ' -latomic'
   elif "win32" in sys.platform and sys.version_info < (3, 5):
-    msvcr = cygwinccompiler.get_msvcr()
     if msvcr is None:
         EXTRA_ENV_LINK_ARGS += (' -static-libgcc -static-libstdc++')
     else:
